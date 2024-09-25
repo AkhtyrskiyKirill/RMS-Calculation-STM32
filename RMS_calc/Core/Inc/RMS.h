@@ -13,6 +13,8 @@
 #define B1 0.8326e-3f
 #define A1 -0.9983f
 
+// Расчет действующего значения сигнала
+// Алгоритм описан в статье https://elibrary.ru/download/elibrary_54475580_91851937.pdf
 float TrueRMS(float x_curr);
 
 #endif /* INC_RMS_H_ */

@@ -41,13 +41,13 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  18 .debug_line   000283f3  00000000  00000000  0006b8ba  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_str    000f21d6  00000000  00000000  00093cad  2**0
+ 19 .debug_str    000f2201  00000000  00000000  00093cad  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .comment      00000043  00000000  00000000  00185e83  2**0
+ 20 .comment      00000043  00000000  00000000  00185eae  2**0
                   CONTENTS, READONLY
- 21 .debug_frame  00006cd0  00000000  00000000  00185ec8  2**2
+ 21 .debug_frame  00006cd0  00000000  00000000  00185ef4  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 22 .debug_line_str 0000004a  00000000  00000000  0018cb98  2**0
+ 22 .debug_line_str 0000004a  00000000  00000000  0018cbc4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -407,16 +407,26 @@ Disassembly of section .text:
  800057e:	bf00      	nop
 
 08000580 <TrueRMS>:
+
+#include "RMS.h"
+
+// Расчет действующего значения сигнала
+// Алгоритм частично описан в статье https://elibrary.ru/download/elibrary_54475580_91851937.pdf
+float TrueRMS(float x_curr) {
  8000580:	b480      	push	{r7}
  8000582:	b085      	sub	sp, #20
  8000584:	af00      	add	r7, sp, #0
  8000586:	ed87 0a01 	vstr	s0, [r7, #4]
+	static float x_prev = 0;			// Предыдущее мгновенное значение входного сигнала
+	static float y_prev = 0.001;		// Предыдущее значение выходного сигнала. В начальный момент взято равное 0.001, для начала расчета
+	x_curr = x_curr * x_curr / y_prev;	//Делим на предыдущее, потому что текущее не знаем
  800058a:	edd7 7a01 	vldr	s15, [r7, #4]
  800058e:	ee67 6aa7 	vmul.f32	s13, s15, s15
  8000592:	4b18      	ldr	r3, [pc, #96]	@ (80005f4 <TrueRMS+0x74>)
  8000594:	ed93 7a00 	vldr	s14, [r3]
  8000598:	eec6 7a87 	vdiv.f32	s15, s13, s14
  800059c:	edc7 7a01 	vstr	s15, [r7, #4]
+	float y_curr = B0 * x_curr + B1 * x_prev - A1 * y_prev;		// Расчет текущего действущего значения сигнала
  80005a0:	edd7 7a01 	vldr	s15, [r7, #4]
  80005a4:	ed9f 7a14 	vldr	s14, [pc, #80]	@ 80005f8 <TrueRMS+0x78>
  80005a8:	ee27 7a87 	vmul.f32	s14, s15, s14
@@ -431,14 +441,21 @@ Disassembly of section .text:
  80005c8:	ee67 7aa6 	vmul.f32	s15, s15, s13
  80005cc:	ee77 7a27 	vadd.f32	s15, s14, s15
  80005d0:	edc7 7a03 	vstr	s15, [r7, #12]
+	// Запоминаем текущие значения входного сигнала и рассчитанного действующего значения
+	x_prev = x_curr;
  80005d4:	4a09      	ldr	r2, [pc, #36]	@ (80005fc <TrueRMS+0x7c>)
  80005d6:	687b      	ldr	r3, [r7, #4]
  80005d8:	6013      	str	r3, [r2, #0]
+	y_prev = y_curr;
  80005da:	4a06      	ldr	r2, [pc, #24]	@ (80005f4 <TrueRMS+0x74>)
  80005dc:	68fb      	ldr	r3, [r7, #12]
  80005de:	6013      	str	r3, [r2, #0]
+
+	return y_curr;
  80005e0:	68fb      	ldr	r3, [r7, #12]
  80005e2:	ee07 3a90 	vmov	s15, r3
+
+}
  80005e6:	eeb0 0a67 	vmov.f32	s0, s15
  80005ea:	3714      	adds	r7, #20
  80005ec:	46bd      	mov	sp, r7
@@ -768,70 +785,180 @@ Disassembly of section .text:
  80008dc:	40023800 	.word	0x40023800
 
 080008e0 <NMI_Handler>:
+/******************************************************************************/
+/**
+  * @brief This function handles Non maskable interrupt.
+  */
+void NMI_Handler(void)
+{
  80008e0:	b480      	push	{r7}
  80008e2:	af00      	add	r7, sp, #0
+  /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
+
+  /* USER CODE END NonMaskableInt_IRQn 0 */
+  /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
+   while (1)
  80008e4:	bf00      	nop
  80008e6:	e7fd      	b.n	80008e4 <NMI_Handler+0x4>
 
 080008e8 <HardFault_Handler>:
+
+/**
+  * @brief This function handles Hard fault interrupt.
+  */
+void HardFault_Handler(void)
+{
  80008e8:	b480      	push	{r7}
  80008ea:	af00      	add	r7, sp, #0
+  /* USER CODE BEGIN HardFault_IRQn 0 */
+
+  /* USER CODE END HardFault_IRQn 0 */
+  while (1)
  80008ec:	bf00      	nop
  80008ee:	e7fd      	b.n	80008ec <HardFault_Handler+0x4>
 
 080008f0 <MemManage_Handler>:
+
+/**
+  * @brief This function handles Memory management fault.
+  */
+void MemManage_Handler(void)
+{
  80008f0:	b480      	push	{r7}
  80008f2:	af00      	add	r7, sp, #0
+  /* USER CODE BEGIN MemoryManagement_IRQn 0 */
+
+  /* USER CODE END MemoryManagement_IRQn 0 */
+  while (1)
  80008f4:	bf00      	nop
  80008f6:	e7fd      	b.n	80008f4 <MemManage_Handler+0x4>
 
 080008f8 <BusFault_Handler>:
+
+/**
+  * @brief This function handles Pre-fetch fault, memory access fault.
+  */
+void BusFault_Handler(void)
+{
  80008f8:	b480      	push	{r7}
  80008fa:	af00      	add	r7, sp, #0
+  /* USER CODE BEGIN BusFault_IRQn 0 */
+
+  /* USER CODE END BusFault_IRQn 0 */
+  while (1)
  80008fc:	bf00      	nop
  80008fe:	e7fd      	b.n	80008fc <BusFault_Handler+0x4>
 
 08000900 <UsageFault_Handler>:
+
+/**
+  * @brief This function handles Undefined instruction or illegal state.
+  */
+void UsageFault_Handler(void)
+{
  8000900:	b480      	push	{r7}
  8000902:	af00      	add	r7, sp, #0
+  /* USER CODE BEGIN UsageFault_IRQn 0 */
+
+  /* USER CODE END UsageFault_IRQn 0 */
+  while (1)
  8000904:	bf00      	nop
  8000906:	e7fd      	b.n	8000904 <UsageFault_Handler+0x4>
 
 08000908 <SVC_Handler>:
+
+/**
+  * @brief This function handles System service call via SWI instruction.
+  */
+void SVC_Handler(void)
+{
  8000908:	b480      	push	{r7}
  800090a:	af00      	add	r7, sp, #0
+
+  /* USER CODE END SVCall_IRQn 0 */
+  /* USER CODE BEGIN SVCall_IRQn 1 */
+
+  /* USER CODE END SVCall_IRQn 1 */
+}
  800090c:	bf00      	nop
  800090e:	46bd      	mov	sp, r7
  8000910:	f85d 7b04 	ldr.w	r7, [sp], #4
  8000914:	4770      	bx	lr
 
 08000916 <DebugMon_Handler>:
+
+/**
+  * @brief This function handles Debug monitor.
+  */
+void DebugMon_Handler(void)
+{
  8000916:	b480      	push	{r7}
  8000918:	af00      	add	r7, sp, #0
+
+  /* USER CODE END DebugMonitor_IRQn 0 */
+  /* USER CODE BEGIN DebugMonitor_IRQn 1 */
+
+  /* USER CODE END DebugMonitor_IRQn 1 */
+}
  800091a:	bf00      	nop
  800091c:	46bd      	mov	sp, r7
  800091e:	f85d 7b04 	ldr.w	r7, [sp], #4
  8000922:	4770      	bx	lr
 
 08000924 <PendSV_Handler>:
+
+/**
+  * @brief This function handles Pendable request for system service.
+  */
+void PendSV_Handler(void)
+{
  8000924:	b480      	push	{r7}
  8000926:	af00      	add	r7, sp, #0
+
+  /* USER CODE END PendSV_IRQn 0 */
+  /* USER CODE BEGIN PendSV_IRQn 1 */
+
+  /* USER CODE END PendSV_IRQn 1 */
+}
  8000928:	bf00      	nop
  800092a:	46bd      	mov	sp, r7
  800092c:	f85d 7b04 	ldr.w	r7, [sp], #4
  8000930:	4770      	bx	lr
 
 08000932 <SysTick_Handler>:
+
+/**
+  * @brief This function handles System tick timer.
+  */
+void SysTick_Handler(void)
+{
  8000932:	b580      	push	{r7, lr}
  8000934:	af00      	add	r7, sp, #0
+  /* USER CODE BEGIN SysTick_IRQn 0 */
+
+  /* USER CODE END SysTick_IRQn 0 */
+  HAL_IncTick();
  8000936:	f000 fae5 	bl	8000f04 <HAL_IncTick>
+  /* USER CODE BEGIN SysTick_IRQn 1 */
+
+  /* USER CODE END SysTick_IRQn 1 */
+}
  800093a:	bf00      	nop
  800093c:	bd80      	pop	{r7, pc}
 	...
 
 08000940 <TIM1_UP_TIM10_IRQHandler>:
+
+/**
+  * @brief This function handles TIM1 update interrupt and TIM10 global interrupt.
+  */
+void TIM1_UP_TIM10_IRQHandler(void)
+{
  8000940:	b580      	push	{r7, lr}
  8000942:	af00      	add	r7, sp, #0
+  /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
+
+	true_RMS = TrueRMS(v_in_vals[sample_num++]);
  8000944:	4b0f      	ldr	r3, [pc, #60]	@ (8000984 <TIM1_UP_TIM10_IRQHandler+0x44>)
  8000946:	781b      	ldrb	r3, [r3, #0]
  8000948:	1c5a      	adds	r2, r3, #1
@@ -847,15 +974,26 @@ Disassembly of section .text:
  8000962:	eef0 7a40 	vmov.f32	s15, s0
  8000966:	4b09      	ldr	r3, [pc, #36]	@ (800098c <TIM1_UP_TIM10_IRQHandler+0x4c>)
  8000968:	edc3 7a00 	vstr	s15, [r3]
+
+	if (sample_num >= TABLE_SIZE) {
  800096c:	4b05      	ldr	r3, [pc, #20]	@ (8000984 <TIM1_UP_TIM10_IRQHandler+0x44>)
  800096e:	781b      	ldrb	r3, [r3, #0]
  8000970:	2b4f      	cmp	r3, #79	@ 0x4f
  8000972:	d902      	bls.n	800097a <TIM1_UP_TIM10_IRQHandler+0x3a>
+		sample_num = 0;
  8000974:	4b03      	ldr	r3, [pc, #12]	@ (8000984 <TIM1_UP_TIM10_IRQHandler+0x44>)
  8000976:	2200      	movs	r2, #0
  8000978:	701a      	strb	r2, [r3, #0]
+	}
+
+  /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim1);
  800097a:	4805      	ldr	r0, [pc, #20]	@ (8000990 <TIM1_UP_TIM10_IRQHandler+0x50>)
  800097c:	f002 fb42 	bl	8003004 <HAL_TIM_IRQHandler>
+  /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
+
+  /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
+}
  8000980:	bf00      	nop
  8000982:	bd80      	pop	{r7, pc}
  8000984:	20000238 	.word	0x20000238
