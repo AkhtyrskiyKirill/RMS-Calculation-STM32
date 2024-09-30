@@ -7,17 +7,20 @@
 
 #include "RMS.h"
 
-// Расчет действующего значения сигнала
-// Алгоритм частично описан в статье https://elibrary.ru/download/elibrary_54475580_91851937.pdf
-float TrueRMS(float x_curr) {
-	static float x_prev = 0;			// Предыдущее мгновенное значение входного сигнала
-	static float y_prev = 0.001;		// Предыдущее значение выходного сигнала. В начальный момент взято равное 0.001, для начала расчета
-	x_curr = x_curr * x_curr / y_prev;	//Делим на предыдущее, потому что текущее не знаем
-	float y_curr = B0 * x_curr + B1 * x_prev - A1 * y_prev;		// Расчет текущего действущего значения сигнала
-	// Запоминаем текущие значения входного сигнала и рассчитанного действующего значения
-	x_prev = x_curr;
-	y_prev = y_curr;
+// Initialization of RMS calculation block (Must be called once for each signal, which RMS is calculated, before start of calculation)
+void RMS_Init(tRMSCalc * RMS_Var) {
+	RMS_Var->MulDivPrev = 0;																			// Previous (instant^2)/RMSPrev
+	RMS_Var->RMSPrev = RMS_PREV_VAL;																	// Previous RMS value of the signal
+	RMS_Var->RMSVal = 0;																				// RMS value of the signal
+}
 
-	return y_curr;
+// RMS Calculation step (Need several steps to reach steady state of RMS)
+// Algorithm is described in an article https://elibrary.ru/download/elibrary_54475580_91851937.pdf
+void RMS_Step(tRMSCalc * RMS_Var) {
+	float tmp = RMS_Var->InstantVal * RMS_Var->InstantVal / RMS_Var->RMSPrev;
+	RMS_Var->RMSVal = B0 * tmp + B1 * RMS_Var->MulDivPrev - A1 * RMS_Var->RMSPrev;
+
+	RMS_Var->MulDivPrev = tmp;
+	RMS_Var->RMSPrev = RMS_Var->RMSVal;
 
 }

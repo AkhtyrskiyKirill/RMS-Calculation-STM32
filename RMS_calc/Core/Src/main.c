@@ -18,10 +18,11 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "lwip.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include "RMS.h"
 
 /* USER CODE END Includes */
 
@@ -32,6 +33,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+// Table size and Timer frequency define emulated sine-wave frequency
+#define TABLE_SIZE 80
 
 /* USER CODE END PD */
 
@@ -44,6 +48,21 @@
 TIM_HandleTypeDef htim1;
 
 /* USER CODE BEGIN PV */
+
+// Table of values of sine-wave signal. As TIM1 frequency is 4 kHZ and TABLE_SIZE is 80, sine-wave freq = 4000 Hz / 80 = 50 Hz
+float v_in_vals[TABLE_SIZE] = { 0, 0.0784194, 0.156356, 0.233329, 0.308866, 0.382499, 0.453778, 0.522261, 0.587528, 0.649176, 0.706825,
+		0.760121, 0.808736, 0.85237, 0.890753, 0.923651, 0.950859, 0.972212, 0.987576, 0.996858, 1,
+		0.996983, 0.987825, 0.972583, 0.951351, 0.92426, 0.891476, 0.853201, 0.809672, 0.761155, 0.707951,
+		0.650386, 0.588816, 0.523618, 0.455196, 0.383971, 0.31038, 0.234878, 0.157929, 0.0800071, 0.00159265,
+		-0.0768316, -0.154783, -0.23178, -0.30735, -0.381027, -0.452358, -0.520902, -0.586238, -0.647963, -0.705698,
+		-0.759086, -0.807798, -0.851536, -0.890028, -0.923039, -0.950365, -0.971838, -0.987324, -0.99673, -0.999997,
+		-0.997105, -0.988072, -0.972952, -0.951841, -0.924867, -0.892196, -0.854031, -0.810605, -0.762187, -0.709075,
+		-0.651595, -0.590102, -0.524975, -0.456614, -0.385441, -0.311894, -0.236425, -0.159501, -0.0815945 };
+
+uint8_t sample_num[3] = {0, 27, 53};		// Three-phase signal
+
+tRMSCalc RMS_A, RMS_B, RMS_C;				// Three-phase RMS Values
+
 
 /* USER CODE END PV */
 
@@ -89,9 +108,14 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_TIM1_Init();
-  MX_LWIP_Init();
   /* USER CODE BEGIN 2 */
 
+  // Init RMS Calculation blocks for three phases
+  RMS_Init(&RMS_A);
+  RMS_Init(&RMS_B);
+  RMS_Init(&RMS_C);
+
+  // Start timer to simulate sine wave
   HAL_TIM_Base_Start_IT(&htim1);
 
   /* USER CODE END 2 */
@@ -217,15 +241,41 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
+
+// Timer callback
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+
+	if (htim->Instance == TIM1) {
+
+		// Update instant values of three phases of sine wave signals
+		RMS_A.InstantVal = v_in_vals[sample_num[0]++];
+		RMS_B.InstantVal = v_in_vals[sample_num[1]++];
+		RMS_C.InstantVal = v_in_vals[sample_num[2]++];
+
+		// Make sure the value numbers are correct
+		for (uint8_t i = 0; i < 3; i++) {
+			if (sample_num[i] >= TABLE_SIZE) {
+				sample_num[i] = 0;
+			}
+		}
+
+		// Calculate RMS values of all phases
+		RMS_Step(&RMS_A);
+		RMS_Step(&RMS_B);
+		RMS_Step(&RMS_C);
+
+		// The RMS values are in RMS_X.RMSVal (X is A, B or C)
+
+	}
+
+}
 
 /* USER CODE END 4 */
 
