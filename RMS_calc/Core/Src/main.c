@@ -63,7 +63,6 @@ uint8_t sample_num[3] = {0, 27, 53};		// Three-phase signal
 
 tRMSCalc RMS_A, RMS_B, RMS_C;				// Three-phase RMS Values
 
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -85,6 +84,7 @@ static void MX_TIM1_Init(void);
   */
 int main(void)
 {
+
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -152,8 +152,8 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 15;
-  RCC_OscInitStruct.PLL.PLLN = 216;
+  RCC_OscInitStruct.PLL.PLLM = 4;
+  RCC_OscInitStruct.PLL.PLLN = 180;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
@@ -256,8 +256,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 		// Update instant values of three phases of sine wave signals
 		RMS_A.InstantVal = v_in_vals[sample_num[0]++];
-		RMS_B.InstantVal = v_in_vals[sample_num[1]++];
-		RMS_C.InstantVal = v_in_vals[sample_num[2]++];
+		RMS_B.InstantVal = 2 * v_in_vals[sample_num[1]++];
+		RMS_C.InstantVal = 3 * v_in_vals[sample_num[2]++];
 
 		// Make sure the value numbers are correct
 		for (uint8_t i = 0; i < 3; i++) {
