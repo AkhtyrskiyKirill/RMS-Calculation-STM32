@@ -12,6 +12,7 @@ calculation block for every signal). When you get the next instantaneous value o
 interface, etc.), you need to use the float RMS_Step(tRMSCalc * RMS_Var, float Instant) function which takes this  
 value as it's second input. The first input of this function is a pointer to corresponding tRMSCalc var.  
 The function outputs the RMS value of this signal. It needs several steps to reach steady state of RMS value.
+You can tune the algorithm coefficients (B0, B1, A1 and RMS_PREV_VAL) in RMS.h file.
 
 ## Example
 
