@@ -49,8 +49,10 @@ TIM_HandleTypeDef htim1;
 
 /* USER CODE BEGIN PV */
 
-// Table of values of sine-wave signal. As TIM1 frequency is 4 kHZ and TABLE_SIZE is 80, sine-wave freq = 4000 Hz / 80 = 50 Hz
-float v_in_vals[TABLE_SIZE] = { 0, 0.0784194, 0.156356, 0.233329, 0.308866, 0.382499, 0.453778, 0.522261, 0.587528, 0.649176, 0.706825,
+//As TIM1 frequency is 4 kHZ and TABLE_SIZE is 80, wave freq = 4000 Hz / 80 = 50 Hz
+
+// Table of values of sine wave signal
+float v_in_sin[TABLE_SIZE] = { 0, 0.0784194, 0.156356, 0.233329, 0.308866, 0.382499, 0.453778, 0.522261, 0.587528, 0.649176, 0.706825,
 		0.760121, 0.808736, 0.85237, 0.890753, 0.923651, 0.950859, 0.972212, 0.987576, 0.996858, 1,
 		0.996983, 0.987825, 0.972583, 0.951351, 0.92426, 0.891476, 0.853201, 0.809672, 0.761155, 0.707951,
 		0.650386, 0.588816, 0.523618, 0.455196, 0.383971, 0.31038, 0.234878, 0.157929, 0.0800071, 0.00159265,
@@ -59,9 +61,32 @@ float v_in_vals[TABLE_SIZE] = { 0, 0.0784194, 0.156356, 0.233329, 0.308866, 0.38
 		-0.997105, -0.988072, -0.972952, -0.951841, -0.924867, -0.892196, -0.854031, -0.810605, -0.762187, -0.709075,
 		-0.651595, -0.590102, -0.524975, -0.456614, -0.385441, -0.311894, -0.236425, -0.159501, -0.0815945 };
 
-uint8_t sample_num[3] = {0, 27, 53};		// Three-phase signal
+// Table of values of square wave signal (duty cycle is 0.25)
+float v_in_square[TABLE_SIZE] = { 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-tRMSCalc RMS_A, RMS_B, RMS_C;				// Three-phase RMS Values
+// Table of values of sawtooth wave signal
+float v_in_saw[TABLE_SIZE] = { 0, 0.0125, 0.025, 0.0375, 0.05, 0.0625, 0.075, 0.0875, 0.1, 0.1125, 0.125,
+		0.1375, 0.15, 0.1625, 0.175, 0.1875, 0.2, 0.2125, 0.225, 0.2375, 0.25,
+		0.2625, 0.275, 0.2875, 0.3, 0.3125, 0.325, 0.3375, 0.35, 0.3625, 0.375,
+		0.3875, 0.4, 0.4125, 0.425, 0.4375, 0.45, 0.4625, 0.475, 0.4875, 0.5,
+		0.5125, 0.525, 0.5375, 0.55, 0.5625, 0.575, 0.5875, 0.6, 0.6125, 0.625,
+		0.6375, 0.65, 0.6625, 0.675, 0.6875, 0.7, 0.7125, 0.725, 0.7375, 0.75,
+		0.7625, 0.775, 0.7875, 0.8, 0.8125, 0.825, 0.837499, 0.849999, 0.862499, 0.874999,
+		0.887499, 0.899999, 0.912499, 0.924999, 0.937499, 0.949999, 0.962499, 0.974999, 0.987499 };
+
+
+uint8_t sample_num[3] = {0, 27, 53};		// 3 signals sample numbers
+
+tRMSCalc RMS_Sin, RMS_Square, RMS_Saw;				// 3 signals RMS calculation structures
+float RMS_Sin_Val, RMS_Square_Val, RMS_Saw_Val;		// RMS values
 
 /* USER CODE END PV */
 
@@ -110,12 +135,12 @@ int main(void)
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 
-  // Init RMS Calculation blocks for three phases
-  RMS_Init(&RMS_A);
-  RMS_Init(&RMS_B);
-  RMS_Init(&RMS_C);
+  // Init RMS Calculation blocks for 3 signals
+  RMS_Init(&RMS_Sin);
+  RMS_Init(&RMS_Square);
+  RMS_Init(&RMS_Saw);
 
-  // Start timer to simulate sine wave
+  // Start timer to simulate signals
   HAL_TIM_Base_Start_IT(&htim1);
 
   /* USER CODE END 2 */
@@ -254,24 +279,21 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 	if (htim->Instance == TIM1) {
 
-		// Update instant values of three phases of sine wave signals
-		RMS_A.InstantVal = v_in_vals[sample_num[0]++];
-		RMS_B.InstantVal = 2 * v_in_vals[sample_num[1]++];
-		RMS_C.InstantVal = 3 * v_in_vals[sample_num[2]++];
-
+		// Update instant values of signals and
 		// Make sure the value numbers are correct
 		for (uint8_t i = 0; i < 3; i++) {
+			sample_num[i]++;
 			if (sample_num[i] >= TABLE_SIZE) {
 				sample_num[i] = 0;
 			}
 		}
 
-		// Calculate RMS values of all phases
-		RMS_Step(&RMS_A);
-		RMS_Step(&RMS_B);
-		RMS_Step(&RMS_C);
+		// Calculate RMS values of all signals
+		RMS_Sin_Val = RMS_Step(&RMS_Sin, v_in_sin[sample_num[0]]);
+		RMS_Square_Val = RMS_Step(&RMS_Square, v_in_square[sample_num[1]]);
+		RMS_Saw_Val = RMS_Step(&RMS_Saw, v_in_saw[sample_num[2]]);
 
-		// The RMS values are in RMS_X.RMSVal (X is A, B or C)
+		// Algorithm needs several steps to reach steady state of RMS
 
 	}
 
