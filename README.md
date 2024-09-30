@@ -1,4 +1,4 @@
-# Signal RMS Calculation library
+# Signal RMS Calculation library for microcontrollers
 
 This library implements an RMS calculation algorithm which allows to calculate RMS values of input signal.  
 
@@ -21,5 +21,5 @@ frequency). The RMS values are stored to RMS_Sin_Val, RMS_Square_Val, RMS_Saw_Va
 
 ## Reference to the RMS calculation algorithm
 
-The RMS Calculation algorithm is described in the article: 
+The RMS Calculation algorithm is described in the article:  
 Кузнецов Д. Н., Захарченко И. А. СПОСОБ ИЗМЕРЕНИЯ TRUE RMS ПЕРЕМЕННОГО НАПРЯЖЕНИЯ С ПОМОЩЬЮ МИКРОКОНТРОЛЛЕРА //АВТОМАТИЗАЦИЯ ТЕХНОЛОГИЧЕСКИХ ОБЪЕКТОВ И ПРОЦЕССОВ. ПОИСК МОЛОДЫХ. – 2023. – С. 121-124.
