@@ -4,6 +4,7 @@ This library implements an RMS calculation algorithm which allows to calculate R
 
 ## How to use the library
 
+To use the library you need to include RMS.h and RMS.c files to your project.  
 For each signal, RMS value of which you want to calculate, you need to create an instance of type tRMSCalc.  
 Then you need to initialize the calculation block by using void RMS_Init(tRMSCalc * RMS_Var) function (it's input  
 is pointer to corresponding tRMSCalc var; if you calculate RMS of several signals, you must initialize the  
